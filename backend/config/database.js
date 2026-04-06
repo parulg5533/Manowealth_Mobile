@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-// mongodb+srv://harshvchawla996:ZeKEWIzV0BgDxxJz@cluster0.ehvlcx1.mongodb.net/manthan
+
 const options = {
     // useNewUrlParser: true,
     // useUnifiedTopology: true,
