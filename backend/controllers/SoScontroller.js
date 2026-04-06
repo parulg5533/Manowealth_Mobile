@@ -51,4 +51,20 @@ const getAllSoS = async (req, res) => {
   }
 }
 
-module.exports = {sendSos,getAllSoS};
+const markSosResolved = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await NotificationModel.findByIdAndUpdate(
+      id,
+      { resolved: true, resolvedAt: new Date() },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'SOS alert not found' });
+    return res.status(200).json({ message: 'SOS marked as resolved', data: updated });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: 'Failed to mark SOS as resolved' });
+  }
+};
+
+module.exports = { sendSos, getAllSoS, markSosResolved };

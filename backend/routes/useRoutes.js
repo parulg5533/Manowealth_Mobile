@@ -65,13 +65,13 @@ const {
 } = require('../controllers/supAdminController');
 
 const Profile = require("../models/profileModel");
-const { sendSos, getAllSoS } = require('../controllers/SoScontroller');
+const { sendSos, getAllSoS, markSosResolved } = require('../controllers/SoScontroller');
 const verifyToken = require("../middlewares/authenticateToken");
 const { submitHelpAFriend, getHelpAFriendEntries } = require('../controllers/helpAFriendController');
 const { submitSurvey } = require("../controllers/surveyController");
 const supAdminModel = require("../models/superAdminModel");
 const { logMood, getMoodLogs } = require("../controllers/moodController");
-const { bookAppointment, markAppointmentComplete } = require("../controllers/appointmentController");
+const { bookAppointment, markAppointmentComplete, getStudentAppointments, getAdminAppointments } = require("../controllers/appointmentController");
 
 //basic routes
 router.post("/signup", signup);
@@ -79,12 +79,15 @@ router.post("/login",  login);
 router.post("/promote-to-admin", verifyToken, promoteToAdmin);
 router.post("/send-sos", verifyToken, sendSos);
 router.get("/get-all-sos/:id", verifyToken, getAllSoS);
+router.patch("/sos/resolve/:id", verifyToken, markSosResolved);
 router.post("/help-a-friend", submitHelpAFriend);
 router.get("/get-help-a-friend-entries", verifyToken, getHelpAFriendEntries);
 router.post("/survey", submitSurvey);
 router.post("/log-mood", verifyToken, logMood);
 router.get("/get-mood-logs/:userId", verifyToken, getMoodLogs);
 router.post("/book-appointment", verifyToken, bookAppointment);
+router.get("/get-appointments/:userId", verifyToken, getStudentAppointments);
+router.get("/admin/appointments/:adminId", verifyToken, getAdminAppointments);
 
 //tnc route
 router.post("/update-tnc", verifyToken, async (req, res) => {

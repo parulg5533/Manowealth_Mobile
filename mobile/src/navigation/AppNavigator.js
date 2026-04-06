@@ -33,6 +33,7 @@ import AdminDashboardScreen from '../screens/admin/AdminDashboardScreen';
 import UserDataScreen from '../screens/admin/UserDataScreen';
 import UserReportScreen from '../screens/admin/UserReportScreen';
 import SOSNotificationsScreen from '../screens/admin/SOSNotificationsScreen';
+import AllAppointmentsScreen from '../screens/admin/AllAppointmentsScreen';
 
 // Super Admin Screens
 import SuperAdminDashboardScreen from '../screens/superadmin/SuperAdminDashboardScreen';
@@ -119,6 +120,7 @@ function AuthStack() {
       <Stack.Screen name="AdminLogin" component={AdminLoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="SuperAdminLogin" component={SuperAdminLoginScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: 'Forgot Password' }} />
+      <Stack.Screen name="HelpAFriend" component={HelpAFriendScreen} options={{ title: 'Help a Friend' }} />
     </Stack.Navigator>
   );
 }
@@ -158,6 +160,7 @@ function AdminStack() {
       <Stack.Screen name="AdminTabs" component={AdminTabs} options={{ headerShown: false }} />
       <Stack.Screen name="UserReport" component={UserReportScreen} options={({ route }) => ({ title: route.params?.userName || 'Student Report' })} />
       <Stack.Screen name="UnassignedUsers" component={UserDataScreen} options={{ title: 'Unassigned Students' }} />
+      <Stack.Screen name="AllAppointments" component={AllAppointmentsScreen} options={{ title: 'Appointment Logs' }} />
     </Stack.Navigator>
   );
 }
@@ -178,7 +181,7 @@ function SuperAdminStack() {
       <Stack.Screen name="AddAdmin" component={AddAdminScreen} options={{ title: 'Add Admin' }} />
       <Stack.Screen name="AllUsers" component={UserDataScreen} options={{ title: 'All Students' }} />
       <Stack.Screen name="AllSOSLogs" component={SOSNotificationsScreen} options={{ title: 'SOS Logs' }} />
-      <Stack.Screen name="AllAppointments" component={AppointmentScreen} options={{ title: 'All Appointments' }} />
+      <Stack.Screen name="AllAppointments" component={AllAppointmentsScreen} options={{ title: 'Appointment Logs' }} />
       <Stack.Screen name="HelpAFriendEntries" component={HelpAFriendScreen} options={{ title: 'Help a Friend Entries' }} />
       <Stack.Screen name="UserReport" component={UserReportScreen} options={({ route }) => ({ title: route.params?.userName || 'Student Report' })} />
     </Stack.Navigator>

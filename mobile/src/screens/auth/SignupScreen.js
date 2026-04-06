@@ -68,14 +68,25 @@ export default function SignupScreen({ navigation }) {
       style={{ flex: 1, backgroundColor: theme.bg }}
     >
       <ScrollView contentContainerStyle={s.container} keyboardShouldPersistTaps="handled">
-        <View style={s.logoWrap}>
-          <Image source={require('../../../assets/logo.png')} style={s.logo} resizeMode="contain" />
-          <Text style={s.appName}>Manowealth</Text>
-          <Text style={s.tagline}>Create your account</Text>
+
+        {/* Top wellness illustration banner — bg2 */}
+        <View style={s.banner}>
+          <Image
+            source={require('../../../assets/bg2.png')}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+          <View style={s.bannerOverlay} />
+          <View style={s.bannerContent}>
+            <Image source={require('../../../assets/logo.png')} style={s.logo} resizeMode="contain" />
+            <Text style={s.appName}>Join Manowealth</Text>
+            <Text style={s.tagline}>Your wellness journey starts here</Text>
+          </View>
         </View>
 
+        {/* Signup form card */}
         <View style={s.card}>
-          <Text style={s.title}>Student Sign Up</Text>
+          <Text style={s.title}>Create Account</Text>
 
           <View style={s.fieldWrap}>
             <Text style={s.label}>Username</Text>
@@ -121,8 +132,15 @@ export default function SignupScreen({ navigation }) {
             {errors.password ? <Text style={s.errorText}>{errors.password}</Text> : null}
           </View>
 
+          {/* Password rules hint */}
+          <View style={s.rulesBox}>
+            {['8+ characters', '1 uppercase letter', '1 number', '1 special character'].map(r => (
+              <Text key={r} style={s.ruleText}>· {r}</Text>
+            ))}
+          </View>
+
           <TouchableOpacity style={s.btn} onPress={handleSignup} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Sign Up</Text>}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={s.btnText}>Create Account</Text>}
           </TouchableOpacity>
 
           <View style={s.loginRow}>
@@ -132,50 +150,57 @@ export default function SignupScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
+
       </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = (theme) => StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: theme.bg, padding: 20, justifyContent: 'center' },
-  logoWrap: { alignItems: 'center', marginBottom: 28 },
-  logo: { width: 72, height: 72, marginBottom: 10 },
-  appName: { fontSize: 26, fontWeight: '800', color: theme.accent, letterSpacing: 1 },
-  tagline: { fontSize: 13, color: theme.textMuted, marginTop: 4 },
-  card: {
-    backgroundColor: theme.card,
-    borderRadius: 20,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: theme.border,
+  container: { flexGrow: 1, backgroundColor: theme.bg },
+
+  // Wellness illustration banner
+  banner: {
+    height: 230, justifyContent: 'flex-end', overflow: 'hidden',
   },
-  title: { fontSize: 22, fontWeight: '800', color: theme.textPrimary, textAlign: 'center', marginBottom: 20 },
-  fieldWrap: { marginBottom: 16 },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,12,22,0.52)',
+  },
+  bannerContent: { alignItems: 'center', paddingBottom: 24 },
+  logo: { width: 56, height: 56, marginBottom: 10 },
+  appName: { fontSize: 26, fontWeight: '900', color: '#fff', letterSpacing: 0.3 },
+  tagline: { fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: '500' },
+
+  // Form card
+  card: {
+    backgroundColor: theme.card, borderTopLeftRadius: 28, borderTopRightRadius: 28,
+    padding: 28, paddingTop: 30, flex: 1,
+    borderTopWidth: 1, borderColor: theme.border,
+    marginTop: -16,
+  },
+  title: { fontSize: 22, fontWeight: '800', color: theme.textPrimary, textAlign: 'center', marginBottom: 22 },
+  fieldWrap: { marginBottom: 14 },
   label: { fontSize: 13, fontWeight: '600', color: theme.textSecondary, marginBottom: 6 },
   input: {
-    backgroundColor: theme.elevated,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 11,
-    fontSize: 15,
-    color: theme.textPrimary,
+    backgroundColor: theme.elevated, borderWidth: 1, borderColor: theme.border,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, color: theme.textPrimary,
   },
   inputError: { borderColor: theme.danger },
   pwWrap: { position: 'relative' },
   pwInput: { paddingRight: 48 },
-  eyeBtn: { position: 'absolute', right: 12, top: 10 },
+  eyeBtn: { position: 'absolute', right: 12, top: 11 },
   eyeText: { fontSize: 18 },
   errorText: { fontSize: 12, color: theme.danger, marginTop: 4 },
+  rulesBox: {
+    backgroundColor: theme.elevated, borderRadius: 10, padding: 12,
+    marginBottom: 18, flexDirection: 'row', flexWrap: 'wrap', gap: 6,
+  },
+  ruleText: { fontSize: 11, color: theme.textMuted, fontWeight: '500' },
   btn: {
-    backgroundColor: theme.accent,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-    marginTop: 4,
+    backgroundColor: theme.accent, borderRadius: 14,
+    paddingVertical: 15, alignItems: 'center', marginBottom: 16,
   },
   btnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   loginRow: { flexDirection: 'row', justifyContent: 'center' },

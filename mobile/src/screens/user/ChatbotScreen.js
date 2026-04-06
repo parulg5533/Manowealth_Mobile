@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/api';
 import Toast from 'react-native-toast-message';
+import { questions as FALLBACK_QUESTIONS } from '../../constants/questions';
 
 const ANSWER_OPTIONS = [
   { label: 'Strongly Agree', score: 5 },
@@ -34,18 +35,16 @@ export default function ChatbotScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch questions
+    // Fetch questions from API, fall back to hardcoded list if empty or error
     api.get('/getQ')
       .then(res => {
-        setQuestions(res.data.map(q => q.text));
+        const qs = (res.data || []).map(q => q.text).filter(Boolean);
+        setQuestions(qs.length > 0 ? qs : FALLBACK_QUESTIONS);
         setLoading(false);
       })
       .catch(() => {
-        // Fallback to hardcoded questions if API fails
-        import('../../constants/questions').then(m => {
-          setQuestions(m.questions);
-          setLoading(false);
-        });
+        setQuestions(FALLBACK_QUESTIONS);
+        setLoading(false);
       });
 
     // Check if already answered this month
@@ -113,7 +112,9 @@ export default function ChatbotScreen({ navigation }) {
       Toast.show({ type: 'success', text1: 'Survey submitted successfully!' });
       navigation.navigate('Summary');
     } catch (err) {
-      Toast.show({ type: 'error', text1: 'Failed to submit' });
+      console.log('Submit error:', JSON.stringify(err?.response?.data), err?.message);
+      const msg = err?.response?.data?.message || err?.message || 'Failed to submit';
+      Toast.show({ type: 'error', text1: 'Failed to submit', text2: msg });
     } finally {
       setSubmitting(false);
     }
