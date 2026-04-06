@@ -24,7 +24,7 @@ export default function UserReportScreen({ route, navigation }) {
         api.get(`/get-mood-logs/${userId}`),
       ]);
       setUserData(userRes.data);
-      setMoodLogs(moodRes.data?.slice(0, 14) || []);
+      setMoodLogs(moodRes.data?.logs?.slice(0, 14) || []);
     } catch (err) {
       console.log(err);
     } finally {

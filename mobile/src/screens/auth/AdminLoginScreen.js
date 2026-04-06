@@ -33,8 +33,8 @@ export default function AdminLoginScreen({ navigation }) {
     try {
       const res = await api.post('/adminLogin', { email: email.toLowerCase(), password });
       await loginAdmin({
-        username: res.data.admin?.username || res.data.username,
-        adminID: res.data.admin?._id || res.data._id,
+        username: res.data.user?.username,
+        adminID: res.data.user?._id,
         email: email.toLowerCase(),
       }, res.data.token);
       Toast.show({ type: 'success', text1: 'Admin Login Successful' });

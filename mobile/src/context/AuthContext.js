@@ -49,7 +49,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    await AsyncStorage.multiRemove(['token', 'user', 'admin', 'superAdmin']);
+    try {
+      await AsyncStorage.multiRemove(['token', 'user', 'admin', 'superAdmin']);
+    } catch (e) {
+      console.log('AsyncStorage clear error:', e);
+    }
     setUser(null);
     setAdmin(null);
     setSuperAdmin(null);

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
-  TextInput, ActivityIndicator, RefreshControl,
+  TextInput, ActivityIndicator, RefreshControl, Modal,
+  ScrollView, Pressable,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/api';
+import Toast from 'react-native-toast-message';
 
 export default function UserDataScreen({ navigation }) {
   const { theme } = useTheme();
@@ -17,6 +19,12 @@ export default function UserDataScreen({ navigation }) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Assign modal state
+  const [admins, setAdmins] = useState([]);
+  const [assignModalVisible, setAssignModalVisible] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [assigning, setAssigning] = useState(false);
 
   const fetchUsers = async () => {
     try {
@@ -36,7 +44,20 @@ export default function UserDataScreen({ navigation }) {
     }
   };
 
+  const fetchAdmins = async () => {
+    try {
+      const res = await api.get('/getAllAdmins');
+      setAdmins(res.data || []);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   useEffect(() => { fetchUsers(); }, [admin, superAdmin]);
+
+  useEffect(() => {
+    if (superAdmin) fetchAdmins();
+  }, [superAdmin]);
 
   useEffect(() => {
     if (!search.trim()) {
@@ -49,6 +70,25 @@ export default function UserDataScreen({ navigation }) {
     }
   }, [search, users]);
 
+  const openAssignModal = (student) => {
+    setSelectedStudent(student);
+    setAssignModalVisible(true);
+  };
+
+  const handleAssign = async (adminId) => {
+    setAssigning(true);
+    try {
+      await api.post('/assign-admin', { userId: selectedStudent._id, adminId });
+      Toast.show({ type: 'success', text1: `${selectedStudent.username} assigned successfully` });
+      setAssignModalVisible(false);
+      fetchUsers();
+    } catch (err) {
+      Toast.show({ type: 'error', text1: 'Failed to assign student' });
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const getScoreColor = (score) => {
     if (score == null) return theme.textMuted;
     if (score >= 70) return theme.sage;
@@ -60,6 +100,7 @@ export default function UserDataScreen({ navigation }) {
     <TouchableOpacity
       style={s.userCard}
       onPress={() => navigation.navigate('UserReport', { userId: item._id, userName: item.username })}
+      onLongPress={() => superAdmin && openAssignModal(item)}
       activeOpacity={0.8}
     >
       <View style={s.userAvatar}>
@@ -71,16 +112,30 @@ export default function UserDataScreen({ navigation }) {
         <View style={s.tagRow}>
           {item.degree && <View style={s.tag}><Text style={s.tagText}>{item.degree}</Text></View>}
           {item.department && <View style={s.tag}><Text style={s.tagText}>{item.department?.split(' ')[0]}</Text></View>}
+          {superAdmin && (
+            <View style={[s.tag, { borderColor: item.assigned_admin ? theme.sage : theme.amber, borderWidth: 1 }]}>
+              <Text style={[s.tagText, { color: item.assigned_admin ? theme.sage : theme.amber }]}>
+                {item.assigned_admin ? 'Assigned' : 'Unassigned'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
-      {item.score != null && (
-        <View style={s.scoreWrap}>
-          <Text style={[s.scoreNum, { color: getScoreColor(item.score) }]}>
-            {Math.round(item.score)}
-          </Text>
-          <Text style={s.scoreLabel}>score</Text>
-        </View>
-      )}
+      <View style={{ alignItems: 'flex-end', gap: 6 }}>
+        {item.score != null && (
+          <View style={s.scoreWrap}>
+            <Text style={[s.scoreNum, { color: getScoreColor(item.score) }]}>
+              {Math.round(item.score)}
+            </Text>
+            <Text style={s.scoreLabel}>score</Text>
+          </View>
+        )}
+        {superAdmin && (
+          <TouchableOpacity style={s.assignBtn} onPress={() => openAssignModal(item)}>
+            <Text style={s.assignBtnText}>Assign</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -124,6 +179,60 @@ export default function UserDataScreen({ navigation }) {
           </View>
         }
       />
+
+      {/* Assign Admin Modal */}
+      <Modal
+        visible={assignModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setAssignModalVisible(false)}
+      >
+        <Pressable style={s.modalOverlay} onPress={() => setAssignModalVisible(false)}>
+          <Pressable style={s.modalSheet} onPress={() => {}}>
+            <View style={s.modalHandle} />
+            <Text style={s.modalTitle}>Assign Counselor</Text>
+            <Text style={s.modalSub}>
+              Student: <Text style={{ color: theme.accent }}>{selectedStudent?.username}</Text>
+            </Text>
+
+            {assigning ? (
+              <ActivityIndicator size="large" color={theme.accent} style={{ marginVertical: 30 }} />
+            ) : (
+              <ScrollView style={{ maxHeight: 320 }} showsVerticalScrollIndicator={false}>
+                {admins.length === 0 ? (
+                  <Text style={s.noAdmins}>No admins available. Create an admin first.</Text>
+                ) : (
+                  admins.map((a) => (
+                    <TouchableOpacity
+                      key={a._id}
+                      style={[
+                        s.adminOption,
+                        selectedStudent?.assigned_admin === a._id && s.adminOptionActive,
+                      ]}
+                      onPress={() => handleAssign(a._id)}
+                    >
+                      <View style={s.adminAvatar}>
+                        <Text style={s.adminAvatarText}>{a.username?.[0]?.toUpperCase() || 'A'}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={s.adminName}>{a.username}</Text>
+                        <Text style={s.adminEmail}>{a.email}</Text>
+                      </View>
+                      {selectedStudent?.assigned_admin === a._id && (
+                        <Text style={{ color: theme.sage, fontSize: 18 }}>✓</Text>
+                      )}
+                    </TouchableOpacity>
+                  ))
+                )}
+              </ScrollView>
+            )}
+
+            <TouchableOpacity style={s.cancelBtn} onPress={() => setAssignModalVisible(false)}>
+              <Text style={s.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -164,6 +273,47 @@ const styles = (theme) => StyleSheet.create({
   scoreWrap: { alignItems: 'center' },
   scoreNum: { fontSize: 22, fontWeight: '900' },
   scoreLabel: { fontSize: 10, color: theme.textMuted },
+  assignBtn: {
+    backgroundColor: theme.accent + '20', borderRadius: 8,
+    paddingHorizontal: 10, paddingVertical: 4,
+    borderWidth: 1, borderColor: theme.accent,
+  },
+  assignBtnText: { fontSize: 11, color: theme.accent, fontWeight: '700' },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 },
   emptyText: { fontSize: 16, color: theme.textMuted, fontWeight: '600' },
+  // Modal
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: theme.card, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    padding: 24, paddingBottom: 40,
+  },
+  modalHandle: {
+    width: 40, height: 4, backgroundColor: theme.border,
+    borderRadius: 2, alignSelf: 'center', marginBottom: 20,
+  },
+  modalTitle: { fontSize: 20, fontWeight: '800', color: theme.textPrimary, marginBottom: 4 },
+  modalSub: { fontSize: 13, color: theme.textMuted, marginBottom: 16 },
+  adminOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    padding: 14, borderRadius: 14, marginBottom: 8,
+    backgroundColor: theme.elevated, borderWidth: 1, borderColor: theme.border,
+  },
+  adminOptionActive: { borderColor: theme.sage, backgroundColor: theme.sage + '15' },
+  adminAvatar: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: theme.card, alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1, borderColor: theme.border,
+  },
+  adminAvatarText: { fontSize: 16, fontWeight: '700', color: theme.accent },
+  adminName: { fontSize: 14, fontWeight: '700', color: theme.textPrimary },
+  adminEmail: { fontSize: 12, color: theme.textMuted },
+  noAdmins: { textAlign: 'center', color: theme.textMuted, marginVertical: 30, fontSize: 14 },
+  cancelBtn: {
+    marginTop: 16, paddingVertical: 14, borderRadius: 14,
+    borderWidth: 1, borderColor: theme.border, alignItems: 'center',
+  },
+  cancelBtnText: { color: theme.textSecondary, fontWeight: '600', fontSize: 15 },
 });

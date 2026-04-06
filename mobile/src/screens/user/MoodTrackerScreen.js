@@ -68,7 +68,7 @@ export default function MoodTrackerScreen({ navigation }) {
   const fetchLogs = async () => {
     try {
       const res = await api.get(`/get-mood-logs/${user?.userID}`);
-      setLogs(res.data?.slice(0, 14) || []);
+      setLogs(res.data?.logs?.slice(0, 14) || []);
     } catch (err) {
       console.log(err);
     } finally {

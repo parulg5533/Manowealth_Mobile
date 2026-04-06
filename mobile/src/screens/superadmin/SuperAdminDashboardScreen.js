@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, ActivityIndicator,
+  RefreshControl, ActivityIndicator, Alert, Pressable,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -43,7 +43,11 @@ export default function SuperAdminDashboardScreen({ navigation }) {
   useEffect(() => { fetchData(); }, []);
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch (e) {
+      Alert.alert('Error', 'Failed to logout. Please try again.');
+    }
   };
 
   if (loading) {
@@ -75,9 +79,13 @@ export default function SuperAdminDashboardScreen({ navigation }) {
           <Text style={s.greeting}>Super Admin</Text>
           <Text style={s.subEmail}>{superAdmin?.email}</Text>
         </View>
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+        <Pressable
+          style={({ pressed }) => [s.logoutBtn, { opacity: pressed ? 0.6 : 1 }]}
+          onPress={handleLogout}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
           <Text style={s.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Stats Grid */}

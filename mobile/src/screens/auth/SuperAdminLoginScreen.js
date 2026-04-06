@@ -34,7 +34,7 @@ export default function SuperAdminLoginScreen({ navigation }) {
       const res = await api.post('/super-login', { email: email.toLowerCase(), password });
       await loginSuperAdmin({
         email: email.toLowerCase(),
-        id: res.data.superAdmin?._id || res.data._id,
+        id: res.data.user?._id,
       }, res.data.token);
       Toast.show({ type: 'success', text1: 'Super Admin Login Successful' });
       // Navigator auto-switches to SuperAdminStack

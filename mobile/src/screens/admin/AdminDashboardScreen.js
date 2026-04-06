@@ -104,7 +104,7 @@ export default function AdminDashboardScreen({ navigation }) {
           {[
             { icon: '👥', label: 'My Users', color: theme.success, screen: 'UserData' },
             { icon: '🆘', label: 'SOS Alerts', color: '#fb7185', screen: 'SOSNotifications' },
-            { icon: '📊', label: 'Reports', color: '#818cf8', screen: 'UserData' },
+            { icon: '📅', label: 'Appointments', color: '#818cf8', screen: 'AllAppointments' },
             { icon: '👤', label: 'Unassigned', color: theme.amber, screen: 'UnassignedUsers' },
           ].map(item => (
             <TouchableOpacity
