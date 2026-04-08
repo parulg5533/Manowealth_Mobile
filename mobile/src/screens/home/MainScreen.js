@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, ImageBackground, Linking,
+  Image, ImageBackground, Linking, ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import axios from 'axios';
+import API_BASE_URL from '../../config';
 
 const TEAM = [
   {
@@ -102,10 +104,19 @@ export default function MainScreen({ navigation }) {
   const { theme } = useTheme();
   const s = styles(theme);
   const [quoteIdx, setQuoteIdx] = useState(0);
+  const [events, setEvents] = useState([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
 
   const quote = QUOTES[quoteIdx];
   const nextQuote = () => setQuoteIdx(i => (i + 1) % QUOTES.length);
   const prevQuote = () => setQuoteIdx(i => (i - 1 + QUOTES.length) % QUOTES.length);
+
+  useEffect(() => {
+    axios.get(`${API_BASE_URL}/events`)
+      .then(res => setEvents(res.data?.data || []))
+      .catch(() => setEvents([]))
+      .finally(() => setEventsLoading(false));
+  }, []);
 
   return (
     <ScrollView style={s.container} contentContainerStyle={s.content}>
@@ -236,6 +247,61 @@ export default function MainScreen({ navigation }) {
           </View>
         </View>
       </TouchableOpacity>
+
+      {/* Upcoming Events */}
+      <View style={s.eventsSectionHeader}>
+        <Text style={s.sectionTitle}>Upcoming Events</Text>
+        {events.some(e => {
+          const age = (Date.now() - new Date(e.createdAt)) / 3600000;
+          return age < 48;
+        }) && (
+          <View style={s.newBadge}><Text style={s.newBadgeText}>NEW</Text></View>
+        )}
+      </View>
+      {eventsLoading ? (
+        <ActivityIndicator size="small" color={theme.accent} style={{ marginBottom: 24 }} />
+      ) : events.length === 0 ? (
+        <View style={s.noEventsCard}>
+          <Text style={s.noEventsEmoji}>📭</Text>
+          <Text style={s.noEventsText}>No upcoming events</Text>
+        </View>
+      ) : (
+        <View style={{ marginBottom: 24 }}>
+          {events.map((ev, idx) => {
+            const isNew = (Date.now() - new Date(ev.createdAt)) / 3600000 < 48;
+            const COLORS = ['#7c83e0', '#3ecfbe', '#f0a96a', '#f472b6', '#6ecb8a', '#a78bfa'];
+            const color = COLORS[idx % COLORS.length];
+            return (
+              <View key={ev._id} style={[s.eventCard, { borderLeftColor: color }]}>
+                <View style={s.eventCardTop}>
+                  <View style={[s.eventIconWrap, { backgroundColor: color + '20' }]}>
+                    <Text style={s.eventIcon}>📅</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <View style={s.eventTitleRow}>
+                      <Text style={s.eventTitle} numberOfLines={1}>{ev.title}</Text>
+                      {isNew && <View style={[s.eventNewPill, { backgroundColor: color + '22', borderColor: color }]}><Text style={[s.eventNewText, { color }]}>NEW</Text></View>}
+                    </View>
+                    <Text style={s.eventDesc} numberOfLines={2}>{ev.description}</Text>
+                  </View>
+                </View>
+                <View style={s.eventMeta}>
+                  <View style={s.eventMetaItem}>
+                    <Text style={s.eventMetaIcon}>🗓</Text>
+                    <Text style={[s.eventMetaText, { color }]}>
+                      {new Date(ev.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </Text>
+                  </View>
+                  <View style={s.eventMetaItem}>
+                    <Text style={s.eventMetaIcon}>📍</Text>
+                    <Text style={[s.eventMetaText, { color }]}>{ev.venue || ev.location || 'TBD'}</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
 
       {/* Meet the Team */}
       <Text style={s.sectionTitle}>Meet the Team</Text>
@@ -408,6 +474,33 @@ const styles = (theme) => StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 7, alignSelf: 'flex-start',
   },
   helpCardBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Events
+  eventsSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  newBadge: { backgroundColor: '#fb7185', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 },
+  newBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  noEventsCard: {
+    backgroundColor: theme.card, borderRadius: 16, padding: 24,
+    alignItems: 'center', marginBottom: 24, borderWidth: 1, borderColor: theme.border,
+  },
+  noEventsEmoji: { fontSize: 32, marginBottom: 8 },
+  noEventsText: { fontSize: 14, color: theme.textMuted, fontWeight: '600' },
+  eventCard: {
+    backgroundColor: theme.card, borderRadius: 16, padding: 14, marginBottom: 10,
+    borderWidth: 1, borderColor: theme.border, borderLeftWidth: 4,
+  },
+  eventCardTop: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  eventIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  eventIcon: { fontSize: 20 },
+  eventTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  eventTitle: { fontSize: 14, fontWeight: '800', color: theme.textPrimary, flex: 1 },
+  eventNewPill: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2 },
+  eventNewText: { fontSize: 9, fontWeight: '800' },
+  eventDesc: { fontSize: 12, color: theme.textSecondary, lineHeight: 17 },
+  eventMeta: { flexDirection: 'row', gap: 16, flexWrap: 'wrap' },
+  eventMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  eventMetaIcon: { fontSize: 11 },
+  eventMetaText: { fontSize: 12, fontWeight: '700' },
 
   // Meet the Team
   teamCard: {

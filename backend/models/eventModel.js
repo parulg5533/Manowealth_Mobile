@@ -14,14 +14,19 @@ const EventSchema = new mongoose.Schema({
     type: Date,
     required: [true, 'Please provide an event date'],
   },
+  venue: {
+    type: String,
+    default: 'TBD',
+  },
   location: {
     type: String,
     default: 'TBD',
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
+  createdByRole: {
+    type: String,
+    enum: ['admin', 'superadmin'],
+    default: 'admin',
   },
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model('Event', EventSchema);

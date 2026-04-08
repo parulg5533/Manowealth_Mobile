@@ -60,15 +60,19 @@ export default function UserDashboardScreen({ navigation }) {
   const [quoteIdx, setQuoteIdx] = useState(Math.floor(Math.random() * QUOTES.length));
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [events, setEvents] = useState([]);
+  const [unreadEventCount, setUnreadEventCount] = useState(0);
 
   const fetchData = async () => {
     try {
-      const [profileRes, moodRes] = await Promise.all([
+      const [profileRes, moodRes, eventsRes] = await Promise.all([
         api.get(`/get-user-info/${user?.userID}`),
         api.get(`/get-mood-logs/${user?.userID}`),
+        api.get('/events'),
       ]);
       setProfile(profileRes.data);
       setMoodLogs(moodRes.data?.logs?.slice(0, 7) || []);
+      setEvents(eventsRes.data?.data || []);
     } catch (err) {
       console.log('Dashboard fetch error:', err);
     } finally {
@@ -77,7 +81,28 @@ export default function UserDashboardScreen({ navigation }) {
     }
   };
 
-  useEffect(() => { if (user?.userID) fetchData(); }, [user]);
+  const fetchNotifications = async () => {
+    if (!user?.userID) return;
+    try {
+      const res = await api.get(`/events/notifications/${user.userID}`);
+      setUnreadEventCount(res.data?.count || 0);
+    } catch {}
+  };
+
+  const markNotifsRead = async () => {
+    if (!user?.userID || unreadEventCount === 0) return;
+    try {
+      await api.patch(`/events/notifications/read/${user.userID}`);
+      setUnreadEventCount(0);
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (user?.userID) {
+      fetchData();
+      fetchNotifications();
+    }
+  }, [user]);
 
   const onRefresh = () => { setRefreshing(true); fetchData(); };
 
@@ -257,6 +282,62 @@ export default function UserDashboardScreen({ navigation }) {
         </View>
       )}
 
+      {/* Upcoming Events */}
+      <TouchableOpacity
+        style={s.eventsSectionHeader}
+        onPress={markNotifsRead}
+        activeOpacity={1}
+      >
+        <Text style={s.sectionTitle}>📅  Upcoming Events</Text>
+        {unreadEventCount > 0 && (
+          <View style={s.unreadBadge}>
+            <Text style={s.unreadBadgeText}>{unreadEventCount} new</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      {events.length === 0 ? (
+        <View style={s.noEventsCard}>
+          <Text style={s.noEventsEmoji}>📭</Text>
+          <Text style={s.noEventsText}>No upcoming events right now</Text>
+        </View>
+      ) : (
+        <View style={{ marginBottom: 16 }}>
+          {events.map((ev, idx) => {
+            const isNew = (Date.now() - new Date(ev.createdAt)) / 3600000 < 48;
+            const COLORS = ['#7c83e0', '#3ecfbe', '#f0a96a', '#f472b6', '#6ecb8a', '#a78bfa'];
+            const color = COLORS[idx % COLORS.length];
+            return (
+              <View key={ev._id} style={[s.eventCard, { borderLeftColor: color }]}>
+                <View style={s.eventCardTop}>
+                  <View style={[s.eventIconWrap, { backgroundColor: color + '20' }]}>
+                    <Text style={s.eventIconEmoji}>📅</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <View style={s.eventTitleRow}>
+                      <Text style={s.eventTitle} numberOfLines={1}>{ev.title}</Text>
+                      {isNew && <View style={[s.eventNewPill, { backgroundColor: color + '22', borderColor: color }]}><Text style={[s.eventNewText, { color }]}>NEW</Text></View>}
+                    </View>
+                    <Text style={s.eventDesc} numberOfLines={2}>{ev.description}</Text>
+                  </View>
+                </View>
+                <View style={s.eventMeta}>
+                  <View style={s.eventMetaItem}>
+                    <Text style={s.eventMetaIcon}>🗓</Text>
+                    <Text style={[s.eventMetaText, { color }]}>
+                      {new Date(ev.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </Text>
+                  </View>
+                  <View style={s.eventMetaItem}>
+                    <Text style={s.eventMetaIcon}>📍</Text>
+                    <Text style={[s.eventMetaText, { color }]}>{ev.venue || ev.location || 'TBD'}</Text>
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
       {/* Meet the Team */}
       <View style={s.teamSection}>
         <View style={s.devHeaderRow}>
@@ -412,6 +493,33 @@ const styles = (theme) => StyleSheet.create({
   sosBtnText: { fontSize: 16, fontWeight: '800', color: '#fb7185' },
   sosSubText: { fontSize: 12, color: theme.textMuted, marginTop: 2 },
   sosArrow: { fontSize: 24, color: '#fb7185', fontWeight: '700' },
+
+  // Events
+  eventsSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  unreadBadge: { backgroundColor: '#fb7185', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
+  unreadBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  noEventsCard: {
+    backgroundColor: theme.card, borderRadius: 14, padding: 20,
+    alignItems: 'center', marginBottom: 16, borderWidth: 1, borderColor: theme.border,
+  },
+  noEventsEmoji: { fontSize: 28, marginBottom: 6 },
+  noEventsText: { fontSize: 13, color: theme.textMuted, fontWeight: '600' },
+  eventCard: {
+    backgroundColor: theme.card, borderRadius: 14, padding: 12, marginBottom: 10,
+    borderWidth: 1, borderColor: theme.border, borderLeftWidth: 4,
+  },
+  eventCardTop: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  eventIconWrap: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  eventIconEmoji: { fontSize: 18 },
+  eventTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 3 },
+  eventTitle: { fontSize: 13, fontWeight: '800', color: theme.textPrimary, flex: 1 },
+  eventNewPill: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 },
+  eventNewText: { fontSize: 9, fontWeight: '800' },
+  eventDesc: { fontSize: 12, color: theme.textSecondary, lineHeight: 16 },
+  eventMeta: { flexDirection: 'row', gap: 14, flexWrap: 'wrap' },
+  eventMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  eventMetaIcon: { fontSize: 11 },
+  eventMetaText: { fontSize: 11, fontWeight: '700' },
 
   // Meet the Team section
   teamSection: {
