@@ -1,12 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, RefreshControl, ActivityIndicator,
+  Image, RefreshControl, ActivityIndicator, Linking,
 } from 'react-native';
+
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/api';
 import Toast from 'react-native-toast-message';
+
+const TEAM = [
+  { name: 'Jimson Mathew', role: 'Dean, Student Affairs', email: 'dean_sa@iitp.ac.in', initials: 'JM', color: '#7c83e0', emoji: '🎓' },
+  { name: 'Aditya', role: 'Counselor', email: 'counselor2@iitp.ac.in', initials: 'AD', color: '#3ecfbe', emoji: '💙' },
+  { name: 'Mahendar Ram', role: 'PIC Wellness', email: 'pic_wellness@iitp.ac.in', initials: 'MR', color: '#f0a96a', emoji: '🌿' },
+];
+
+const DEVELOPERS = [
+  {
+    name: 'Parul Garg',
+    role: 'Developer',
+    initials: 'PG',
+    color: '#7c83e0',
+    linkedin: 'https://www.linkedin.com/in/parul-garg-iitp',
+  },
+  {
+    name: 'Mihika Saxena',
+    role: 'Developer',
+    initials: 'MS',
+    color: '#f472b6',
+    linkedin: 'https://www.linkedin.com/in/mihika-saxena-b5bb8a28b/',
+  },
+];
 
 const QUOTES = [
   { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "Nelson Mandela", category: "Resilience", color: "#7c83e0" },
@@ -232,6 +256,72 @@ export default function UserDashboardScreen({ navigation }) {
           </View>
         </View>
       )}
+
+      {/* Meet the Team */}
+      <View style={s.teamSection}>
+        <View style={s.devHeaderRow}>
+          <Text style={s.devSectionTitle}>🏛️  Meet the Team</Text>
+          <View style={[s.devBadge, { backgroundColor: '#3ecfbe20' }]}>
+            <Text style={[s.devBadgeText, { color: '#3ecfbe' }]}>IIT Patna</Text>
+          </View>
+        </View>
+        <Text style={s.devSectionSub}>The people supporting your wellness</Text>
+        {TEAM.map((member, idx) => (
+          <View key={member.name}>
+            <TouchableOpacity
+              style={s.teamRow}
+              onPress={() => Linking.openURL(`mailto:${member.email}`)}
+              activeOpacity={0.78}
+            >
+              <View style={[s.teamAvatar, { backgroundColor: member.color + '20', borderColor: member.color + '50' }]}>
+                <Text style={s.teamEmoji}>{member.emoji}</Text>
+              </View>
+              <View style={s.teamInfo}>
+                <Text style={s.teamName}>{member.name}</Text>
+                <View style={[s.teamRolePill, { backgroundColor: member.color + '18', borderColor: member.color + '40' }]}>
+                  <Text style={[s.teamRoleText, { color: member.color }]}>{member.role}</Text>
+                </View>
+                <View style={s.teamEmailRow}>
+                  <Text style={s.teamEmailIcon}>✉</Text>
+                  <Text style={[s.teamEmail, { color: member.color }]}>{member.email}</Text>
+                </View>
+              </View>
+              <Text style={[s.teamArrow, { color: member.color }]}>›</Text>
+            </TouchableOpacity>
+            {idx < TEAM.length - 1 && <View style={s.teamDivider} />}
+          </View>
+        ))}
+      </View>
+
+      {/* Meet the Developers */}
+      <View style={s.devSection}>
+        <View style={s.devHeaderRow}>
+          <Text style={s.devSectionTitle}>👨‍💻  Meet the Developers</Text>
+          <View style={s.devBadge}>
+            <Text style={s.devBadgeText}>IIT Patna</Text>
+          </View>
+        </View>
+        <Text style={s.devSectionSub}>The team behind Manowealth</Text>
+        <View style={s.devsRow}>
+          {DEVELOPERS.map(dev => (
+            <TouchableOpacity
+              key={dev.name}
+              style={[s.devCard, { borderTopColor: dev.color }]}
+              onPress={() => Linking.openURL(dev.linkedin)}
+              activeOpacity={0.82}
+            >
+              <View style={[s.devAvatar, { backgroundColor: dev.color + '22', borderColor: dev.color + '55' }]}>
+                <Text style={[s.devInitials, { color: dev.color }]}>{dev.initials}</Text>
+              </View>
+              <Text style={s.devName}>{dev.name}</Text>
+              <Text style={[s.devRole, { color: dev.color }]}>{dev.role}</Text>
+              <View style={[s.devLinkedInBtn, { backgroundColor: dev.color + '18', borderColor: dev.color + '44' }]}>
+                <Text style={[s.devLinkedInText, { color: dev.color }]}>in  LinkedIn →</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
     </ScrollView>
   );
 }
@@ -294,7 +384,7 @@ const styles = (theme) => StyleSheet.create({
   quoteNavText: { fontSize: 20, fontWeight: '700', lineHeight: 22 },
   quoteDotRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   quoteDot: { height: 5, borderRadius: 3 },
-  quoteIllustration: { width: 110, alignSelf: 'stretch' },
+  quoteIllustration: { width: 88, alignSelf: 'stretch' },
 
   // Mood card
   moodCard: {
@@ -322,6 +412,59 @@ const styles = (theme) => StyleSheet.create({
   sosBtnText: { fontSize: 16, fontWeight: '800', color: '#fb7185' },
   sosSubText: { fontSize: 12, color: theme.textMuted, marginTop: 2 },
   sosArrow: { fontSize: 24, color: '#fb7185', fontWeight: '700' },
+
+  // Meet the Team section
+  teamSection: {
+    backgroundColor: theme.card, borderRadius: 20, padding: 18,
+    borderWidth: 1, borderColor: theme.border, marginBottom: 12,
+  },
+  teamRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  teamAvatar: {
+    width: 46, height: 46, borderRadius: 23, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  teamEmoji: { fontSize: 20 },
+  teamInfo: { flex: 1, gap: 3 },
+  teamName: { fontSize: 13, fontWeight: '800', color: theme.textPrimary },
+  teamRolePill: {
+    alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1,
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  teamRoleText: { fontSize: 10, fontWeight: '700' },
+  teamEmailRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 1 },
+  teamEmailIcon: { fontSize: 10, color: theme.textMuted },
+  teamEmail: { fontSize: 11, fontWeight: '600' },
+  teamArrow: { fontSize: 20, fontWeight: '700' },
+  teamDivider: { height: 1, backgroundColor: theme.border },
+
+  // Developers section
+  devSection: {
+    backgroundColor: theme.card, borderRadius: 20, padding: 18,
+    borderWidth: 1, borderColor: theme.border, marginBottom: 8,
+  },
+  devHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  devSectionTitle: { fontSize: 15, fontWeight: '800', color: theme.textPrimary },
+  devBadge: { backgroundColor: theme.accent + '20', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 },
+  devBadgeText: { fontSize: 10, fontWeight: '700', color: theme.accent },
+  devSectionSub: { fontSize: 12, color: theme.textMuted, marginBottom: 16 },
+  devsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  devCard: {
+    width: '47%', backgroundColor: theme.bg, borderRadius: 14,
+    padding: 14, borderWidth: 1, borderColor: theme.border, borderTopWidth: 2,
+    alignItems: 'center',
+  },
+  devAvatar: {
+    width: 52, height: 52, borderRadius: 26, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+  },
+  devInitials: { fontSize: 18, fontWeight: '900' },
+  devName: { fontSize: 12, fontWeight: '800', color: theme.textPrimary, textAlign: 'center', marginBottom: 3 },
+  devRole: { fontSize: 10, fontWeight: '700', textAlign: 'center', marginBottom: 8 },
+  devLinkedInBtn: {
+    borderRadius: 999, borderWidth: 1,
+    paddingHorizontal: 10, paddingVertical: 4,
+  },
+  devLinkedInText: { fontSize: 10, fontWeight: '700' },
 
   // Counselor card
   counselorCard: {

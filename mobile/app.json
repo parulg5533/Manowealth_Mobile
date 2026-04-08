@@ -20,7 +20,11 @@
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#0f1117"
       },
-      "package": "com.iitp.manowealth"
+      "package": "com.iitp.manowealth",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/logo.png"
@@ -28,6 +32,11 @@
     "plugins": [
       "expo-image-picker",
       "expo-font"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "436a6eb2-a455-4b16-8b71-4ffe8310e9bc"
+      }
+    }
   }
 }

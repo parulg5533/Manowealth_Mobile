@@ -1,9 +1,55 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, ImageBackground,
+  Image, ImageBackground, Linking,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+
+const TEAM = [
+  {
+    name: 'Prof.Jimson Mathew',
+    role: 'Dean, Student Affairs',
+    email: 'dean_sa@iitp.ac.in',
+    initials: 'JM',
+    color: '#7c83e0',
+    emoji: '🎓',
+  },
+  {
+    name: 'Aditya',
+    role: 'Counselor',
+    email: 'counselor2@iitp.ac.in',
+    initials: 'AD',
+    color: '#3ecfbe',
+    emoji: '💙',
+  },
+  {
+    name: 'Dr.Mahendar Ram',
+    role: 'PIC Wellness',
+    email: 'pic_wellness@iitp.ac.in',
+    initials: 'MR',
+    color: '#f0a96a',
+    emoji: '🌿',
+  },
+];
+
+const DEVELOPERS = [
+  {
+    name: 'Parul Garg',
+    role: 'Developer',
+    branch: 'IIT Patna',
+    initials: 'PG',
+    color: '#7c83e0',
+    linkedin: 'https://www.linkedin.com/in/parul-garg-iitp',
+  },
+  {
+    name: 'Mihika Saxena',
+    role: 'Developer',
+    branch: 'IIT Patna',
+    initials: 'MS',
+    color: '#f472b6',
+    linkedin: 'https://www.linkedin.com/in/mihika-saxena-b5bb8a28b/',
+  },
+];
 
 const RESOURCES = [
   {
@@ -85,9 +131,8 @@ export default function MainScreen({ navigation }) {
         </TouchableOpacity>
       </ImageBackground>
 
-      {/* Inspirational Quote Card — bg1 illustration on right */}
+      {/* Inspirational Quote Card */}
       <View style={[s.quoteCard, { borderTopColor: quote.color }]}>
-        {/* Left: text */}
         <View style={s.quoteContent}>
           <View style={s.quoteTopRow}>
             <View style={[s.categoryPill, { backgroundColor: quote.color + '22', borderColor: quote.color + '55' }]}>
@@ -95,15 +140,12 @@ export default function MainScreen({ navigation }) {
             </View>
             <Text style={s.quoteCounter}>{quoteIdx + 1}/{QUOTES.length}</Text>
           </View>
-
           <Text style={[s.quoteBgMark, { color: quote.color }]}>"</Text>
           <Text style={s.quoteBody}>{quote.text}</Text>
-
           <View style={s.quoteAttributionRow}>
             <View style={[s.quoteAccentBar, { backgroundColor: quote.color }]} />
             <Text style={[s.quoteAuthor, { color: quote.color }]}>{quote.author}</Text>
           </View>
-
           <View style={s.quoteNavRow}>
             <TouchableOpacity style={[s.quoteNavBtn, { borderColor: quote.color + '55' }]} onPress={prevQuote}>
               <Text style={[s.quoteNavText, { color: quote.color }]}>‹</Text>
@@ -120,8 +162,7 @@ export default function MainScreen({ navigation }) {
             </TouchableOpacity>
           </View>
         </View>
-
-        {/* Right: wellness illustration */}
+        {/* Resized illustration */}
         <Image
           source={require('../../../assets/bg1.png')}
           style={s.quoteIllustration}
@@ -176,6 +217,7 @@ export default function MainScreen({ navigation }) {
         onPress={() => navigation.navigate('HelpAFriend')}
         activeOpacity={0.85}
       >
+        {/* Resized illustration */}
         <Image
           source={require('../../../assets/bg4.png')}
           style={s.helpCardIllustration}
@@ -194,6 +236,59 @@ export default function MainScreen({ navigation }) {
           </View>
         </View>
       </TouchableOpacity>
+
+      {/* Meet the Team */}
+      <Text style={s.sectionTitle}>Meet the Team</Text>
+      <View style={s.teamCard}>
+        {TEAM.map((member, idx) => (
+          <View key={member.name}>
+            <TouchableOpacity
+              style={s.teamRow}
+              onPress={() => Linking.openURL(`mailto:${member.email}`)}
+              activeOpacity={0.78}
+            >
+              <View style={[s.teamAvatar, { backgroundColor: member.color + '20', borderColor: member.color + '50' }]}>
+                <Text style={s.teamEmoji}>{member.emoji}</Text>
+              </View>
+              <View style={s.teamInfo}>
+                <Text style={s.teamName}>{member.name}</Text>
+                <View style={[s.teamRolePill, { backgroundColor: member.color + '18', borderColor: member.color + '40' }]}>
+                  <Text style={[s.teamRoleText, { color: member.color }]}>{member.role}</Text>
+                </View>
+                <View style={s.teamEmailRow}>
+                  <Text style={s.teamEmailIcon}>✉</Text>
+                  <Text style={[s.teamEmail, { color: member.color }]}>{member.email}</Text>
+                </View>
+              </View>
+              <Text style={[s.teamArrow, { color: member.color }]}>›</Text>
+            </TouchableOpacity>
+            {idx < TEAM.length - 1 && <View style={s.teamDivider} />}
+          </View>
+        ))}
+      </View>
+
+      {/* Meet the Developers */}
+      <Text style={s.sectionTitle}>Meet the Developers</Text>
+      <View style={s.devsGrid}>
+        {DEVELOPERS.map(dev => (
+          <TouchableOpacity
+            key={dev.name}
+            style={[s.devCard, { borderTopColor: dev.color }]}
+            onPress={() => Linking.openURL(dev.linkedin)}
+            activeOpacity={0.82}
+          >
+            <View style={[s.devAvatar, { backgroundColor: dev.color + '22', borderColor: dev.color + '55' }]}>
+              <Text style={[s.devInitials, { color: dev.color }]}>{dev.initials}</Text>
+            </View>
+            <Text style={s.devName}>{dev.name}</Text>
+            <Text style={[s.devRole, { color: dev.color }]}>{dev.role}</Text>
+            <Text style={s.devBranch}>{dev.branch}</Text>
+            <View style={[s.devLinkedInBtn, { backgroundColor: dev.color + '18', borderColor: dev.color + '44' }]}>
+              <Text style={[s.devLinkedInText, { color: dev.color }]}>in  LinkedIn →</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* CTA Card */}
       <View style={s.ctaCard}>
@@ -237,30 +332,30 @@ const styles = (theme) => StyleSheet.create({
   },
   ctaBtnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
 
-  // Quote card — split layout
+  // Quote card — split layout (illustration resized)
   quoteCard: {
     flexDirection: 'row',
     backgroundColor: theme.card,
     borderRadius: 20, borderWidth: 1, borderColor: theme.border,
     borderTopWidth: 3, overflow: 'hidden', marginBottom: 24,
-    minHeight: 220,
+    minHeight: 200,
   },
-  quoteContent: { flex: 1, padding: 18 },
-  quoteTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  quoteContent: { flex: 1, padding: 16 },
+  quoteTopRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
   categoryPill: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1 },
   categoryText: { fontSize: 11, fontWeight: '700' },
   quoteCounter: { fontSize: 11, color: theme.textMuted, fontWeight: '600' },
-  quoteBgMark: { fontSize: 52, fontWeight: '900', lineHeight: 50, marginBottom: 2, opacity: 0.25 },
-  quoteBody: { fontSize: 14, color: theme.textPrimary, fontStyle: 'italic', lineHeight: 22, marginBottom: 14 },
-  quoteAttributionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  quoteBgMark: { fontSize: 44, fontWeight: '900', lineHeight: 44, marginBottom: 2, opacity: 0.25 },
+  quoteBody: { fontSize: 13, color: theme.textPrimary, fontStyle: 'italic', lineHeight: 20, marginBottom: 12 },
+  quoteAttributionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
   quoteAccentBar: { width: 18, height: 2.5, borderRadius: 1 },
   quoteAuthor: { fontSize: 12, fontWeight: '700' },
   quoteNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  quoteNavBtn: { width: 32, height: 32, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  quoteNavBtn: { width: 30, height: 30, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   quoteNavText: { fontSize: 20, fontWeight: '700', lineHeight: 22 },
   quoteDotRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   quoteDot: { height: 6, borderRadius: 3 },
-  quoteIllustration: { width: 115, alignSelf: 'stretch' },
+  quoteIllustration: { width: 88, alignSelf: 'stretch' },   // reduced from 115
 
   // Features
   sectionTitle: { fontSize: 18, fontWeight: '800', color: theme.textPrimary, marginBottom: 14 },
@@ -291,28 +386,76 @@ const styles = (theme) => StyleSheet.create({
   contactIcon: { fontSize: 11, color: theme.textMuted },
   contactText: { fontSize: 12, fontWeight: '600' },
 
-  // Help a Friend card
+  // Help a Friend card (illustration resized)
   helpCard: {
     flexDirection: 'row',
     backgroundColor: theme.card, borderRadius: 20,
     borderWidth: 1, borderColor: '#fb718540',
     borderLeftWidth: 4, borderLeftColor: '#fb7185',
-    overflow: 'hidden', marginBottom: 16, minHeight: 170,
+    overflow: 'hidden', marginBottom: 24, minHeight: 140,
   },
-  helpCardIllustration: { width: 110, alignSelf: 'stretch' },
-  helpCardContent: { flex: 1, padding: 16, justifyContent: 'center' },
+  helpCardIllustration: { width: 88, alignSelf: 'stretch' },  // reduced from 110
+  helpCardContent: { flex: 1, padding: 14, justifyContent: 'center' },
   helpBadge: {
     alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1,
-    paddingHorizontal: 9, paddingVertical: 3, marginBottom: 8,
+    paddingHorizontal: 9, paddingVertical: 3, marginBottom: 7,
   },
   helpBadgeText: { fontSize: 10, fontWeight: '700' },
-  helpCardTitle: { fontSize: 18, fontWeight: '900', color: theme.textPrimary, marginBottom: 6 },
-  helpCardDesc: { fontSize: 12, color: theme.textSecondary, lineHeight: 18, marginBottom: 12 },
+  helpCardTitle: { fontSize: 17, fontWeight: '900', color: theme.textPrimary, marginBottom: 5 },
+  helpCardDesc: { fontSize: 12, color: theme.textSecondary, lineHeight: 17, marginBottom: 10 },
   helpCardBtn: {
     backgroundColor: '#fb7185', borderRadius: 10,
-    paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start',
+    paddingHorizontal: 12, paddingVertical: 7, alignSelf: 'flex-start',
   },
   helpCardBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+
+  // Meet the Team
+  teamCard: {
+    backgroundColor: theme.card, borderRadius: 20,
+    borderWidth: 1, borderColor: theme.border,
+    overflow: 'hidden', marginBottom: 28,
+  },
+  teamRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16,
+  },
+  teamAvatar: {
+    width: 50, height: 50, borderRadius: 25, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  teamEmoji: { fontSize: 22 },
+  teamInfo: { flex: 1, gap: 4 },
+  teamName: { fontSize: 14, fontWeight: '800', color: theme.textPrimary },
+  teamRolePill: {
+    alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1,
+    paddingHorizontal: 9, paddingVertical: 3,
+  },
+  teamRoleText: { fontSize: 10, fontWeight: '700' },
+  teamEmailRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  teamEmailIcon: { fontSize: 10, color: theme.textMuted },
+  teamEmail: { fontSize: 11, fontWeight: '600' },
+  teamArrow: { fontSize: 22, fontWeight: '700' },
+  teamDivider: { height: 1, backgroundColor: theme.border, marginHorizontal: 16 },
+
+  // Developers
+  devsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 28 },
+  devCard: {
+    width: '47%', backgroundColor: theme.card, borderRadius: 18, padding: 16,
+    borderWidth: 1, borderColor: theme.border, borderTopWidth: 3,
+    alignItems: 'center',
+  },
+  devAvatar: {
+    width: 56, height: 56, borderRadius: 28, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+  },
+  devInitials: { fontSize: 20, fontWeight: '900' },
+  devName: { fontSize: 13, fontWeight: '800', color: theme.textPrimary, textAlign: 'center', marginBottom: 4 },
+  devRole: { fontSize: 11, fontWeight: '700', textAlign: 'center', marginBottom: 4 },
+  devBranch: { fontSize: 10, color: theme.textMuted, textAlign: 'center', lineHeight: 15, marginBottom: 10 },
+  devLinkedInBtn: {
+    borderRadius: 999, borderWidth: 1,
+    paddingHorizontal: 12, paddingVertical: 5,
+  },
+  devLinkedInText: { fontSize: 11, fontWeight: '700' },
 
   // CTA
   ctaCard: {
