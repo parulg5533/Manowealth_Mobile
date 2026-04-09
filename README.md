@@ -372,7 +372,7 @@ Announcements support read-receipts. Unread count shown as badge on the 🔔 bel
 |---|---|
 | Prof. Jimson Mathew | Dean, Student Affairs |
 | Dr. Mahendar Ram | PIC Wellness |
-| Aditya | Counselor |
+| Mr. Aditya Sahu | Counselor |
 
 
 ### Developers
