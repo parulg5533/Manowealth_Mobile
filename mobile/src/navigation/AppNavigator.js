@@ -40,6 +40,11 @@ import SuperAdminDashboardScreen from '../screens/superadmin/SuperAdminDashboard
 import AllAdminsScreen from '../screens/superadmin/AllAdminsScreen';
 import AddAdminScreen from '../screens/superadmin/AddAdminScreen';
 
+// Notification Screens
+import UserNotificationsScreen from '../screens/notifications/UserNotificationsScreen';
+import AdminNotificationsScreen from '../screens/notifications/AdminNotificationsScreen';
+import SuperAdminNotificationsScreen from '../screens/notifications/SuperAdminNotificationsScreen';
+
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -142,6 +147,7 @@ function UserStack() {
       <Stack.Screen name="Summary" component={SummaryScreen} options={{ title: 'My Results' }} />
       <Stack.Screen name="HelpAFriend" component={HelpAFriendScreen} options={{ title: 'Help a Friend' }} />
       <Stack.Screen name="Appointment" component={AppointmentScreen} options={{ title: 'Appointments' }} />
+      <Stack.Screen name="Notifications" component={UserNotificationsScreen} options={{ title: 'Notifications' }} />
     </Stack.Navigator>
   );
 }
@@ -161,6 +167,7 @@ function AdminStack() {
       <Stack.Screen name="UserReport" component={UserReportScreen} options={({ route }) => ({ title: route.params?.userName || 'Student Report' })} />
       <Stack.Screen name="UnassignedUsers" component={UserDataScreen} options={{ title: 'Unassigned Students' }} />
       <Stack.Screen name="AllAppointments" component={AllAppointmentsScreen} options={{ title: 'Appointment Logs' }} />
+      <Stack.Screen name="Notifications" component={AdminNotificationsScreen} options={{ title: 'Announcements' }} />
     </Stack.Navigator>
   );
 }
@@ -184,6 +191,7 @@ function SuperAdminStack() {
       <Stack.Screen name="AllAppointments" component={AllAppointmentsScreen} options={{ title: 'Appointment Logs' }} />
       <Stack.Screen name="HelpAFriendEntries" component={HelpAFriendScreen} options={{ title: 'Help a Friend Entries' }} />
       <Stack.Screen name="UserReport" component={UserReportScreen} options={({ route }) => ({ title: route.params?.userName || 'Student Report' })} />
+      <Stack.Screen name="Notifications" component={SuperAdminNotificationsScreen} options={{ title: 'Announcements' }} />
     </Stack.Navigator>
   );
 }

@@ -7,6 +7,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/api';
 import Toast from 'react-native-toast-message';
+import CalendarTimePicker from '../../components/CalendarTimePicker';
 
 export default function AdminDashboardScreen({ navigation }) {
   const { theme } = useTheme();
@@ -17,20 +18,25 @@ export default function AdminDashboardScreen({ navigation }) {
   const [sosAlerts, setSosAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [announcementCount, setAnnouncementCount] = useState(0);
 
   // Event modal state
   const [showEventModal, setShowEventModal] = useState(false);
-  const [eventForm, setEventForm] = useState({ title: '', description: '', eventDate: '', venue: '' });
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [eventForm, setEventForm] = useState({ title: '', description: '', venue: '' });
+  const [selectedDateTime, setSelectedDateTime] = useState(null);
   const [postingEvent, setPostingEvent] = useState(false);
 
   const fetchData = async () => {
     try {
-      const [usersRes, sosRes] = await Promise.all([
+      const [usersRes, sosRes, annRes] = await Promise.all([
         api.get(`/user-admin-data/${admin?.adminID}`),
         api.get(`/get-all-sos/${admin?.adminID}`),
+        api.get(`/announcements/admin/${admin?.adminID}`),
       ]);
       setUsers(usersRes.data || []);
       setSosAlerts(sosRes.data?.filter(s => !s.resolved) || []);
+      setAnnouncementCount(annRes.data?.unreadCount || 0);
     } catch (err) {
       console.log(err);
     } finally {
@@ -44,22 +50,23 @@ export default function AdminDashboardScreen({ navigation }) {
   const handleLogout = async () => { await logout(); };
 
   const postEvent = async () => {
-    if (!eventForm.title || !eventForm.description || !eventForm.eventDate) {
-      Toast.show({ type: 'error', text1: 'Please fill in title, description and date' });
+    if (!eventForm.title || !eventForm.description || !selectedDateTime) {
+      Toast.show({ type: 'error', text1: 'Please fill in title, description and select a date' });
       return;
     }
     setPostingEvent(true);
     try {
       await api.post('/events', {
-        title: eventForm.title,
-        description: eventForm.description,
-        eventDate: new Date(eventForm.eventDate).toISOString(),
-        venue: eventForm.venue || 'TBD',
+        title: eventForm.title.trim(),
+        description: eventForm.description.trim(),
+        eventDate: selectedDateTime.toISOString(),
+        venue: eventForm.venue.trim() || 'TBD',
         createdByRole: 'admin',
       });
       Toast.show({ type: 'success', text1: 'Event posted successfully!' });
       setShowEventModal(false);
-      setEventForm({ title: '', description: '', eventDate: '', venue: '' });
+      setEventForm({ title: '', description: '', venue: '' });
+      setSelectedDateTime(null);
     } catch (err) {
       Toast.show({ type: 'error', text1: 'Failed to post event', text2: err?.response?.data?.message || '' });
     } finally {
@@ -88,9 +95,17 @@ export default function AdminDashboardScreen({ navigation }) {
             <Text style={s.greeting}>Admin Dashboard</Text>
             <Text style={s.adminEmail}>{admin?.email}</Text>
           </View>
-          <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-            <Text style={s.logoutText}>Logout</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+            <TouchableOpacity style={s.bellBtn} onPress={() => navigation.navigate('Notifications')} activeOpacity={0.8}>
+              <Text style={s.bellIcon}>🔔</Text>
+              {announcementCount > 0 && (
+                <View style={s.bellBadge}><Text style={s.bellBadgeText}>{announcementCount > 9 ? '9+' : announcementCount}</Text></View>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+              <Text style={s.logoutText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Stats */}
@@ -178,6 +193,14 @@ export default function AdminDashboardScreen({ navigation }) {
         </View>
       </ScrollView>
 
+      <CalendarTimePicker
+        visible={showCalendar}
+        onClose={() => setShowCalendar(false)}
+        onConfirm={(dt) => setSelectedDateTime(dt)}
+        theme={theme}
+        accentColor="#3ecfbe"
+      />
+
       {/* Post Event Modal */}
       <Modal visible={showEventModal} transparent animationType="slide">
         <View style={s.modalOverlay}>
@@ -209,14 +232,17 @@ export default function AdminDashboardScreen({ navigation }) {
               numberOfLines={3}
             />
 
-            <Text style={s.inputLabel}>Date (YYYY-MM-DD) *</Text>
-            <TextInput
-              style={s.input}
-              placeholder="e.g. 2025-05-20"
-              placeholderTextColor={theme.textMuted}
-              value={eventForm.eventDate}
-              onChangeText={v => setEventForm(f => ({ ...f, eventDate: v }))}
-            />
+            <Text style={s.inputLabel}>Date & Time *</Text>
+            <TouchableOpacity
+              style={[s.datePickerBtn, selectedDateTime && { borderColor: '#3ecfbe' }]}
+              onPress={() => setShowCalendar(true)}
+            >
+              <Text style={[s.datePickerText, selectedDateTime && { color: '#3ecfbe' }]}>
+                {selectedDateTime
+                  ? selectedDateTime.toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                  : '📅  Tap to select date & time'}
+              </Text>
+            </TouchableOpacity>
 
             <Text style={s.inputLabel}>Venue</Text>
             <TextInput
@@ -254,6 +280,17 @@ const styles = (theme) => StyleSheet.create({
     paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: theme.danger,
   },
   logoutText: { fontSize: 13, color: theme.danger, fontWeight: '600' },
+  bellBtn: {
+    width: 36, height: 36, borderRadius: 10, backgroundColor: theme.elevated,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border,
+  },
+  bellIcon: { fontSize: 16 },
+  bellBadge: {
+    position: 'absolute', top: -4, right: -4,
+    backgroundColor: '#fb7185', borderRadius: 999,
+    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2,
+  },
+  bellBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
   statsRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   statCard: { flex: 1, backgroundColor: theme.card, borderRadius: 16, padding: 16, borderWidth: 1.5, alignItems: 'center' },
   statNum: { fontSize: 32, fontWeight: '900', marginBottom: 4 },
@@ -308,6 +345,11 @@ const styles = (theme) => StyleSheet.create({
     color: theme.textPrimary, fontSize: 14, borderWidth: 1, borderColor: theme.border,
   },
   textArea: { minHeight: 72, textAlignVertical: 'top' },
+  datePickerBtn: {
+    backgroundColor: theme.elevated, borderRadius: 12, padding: 14,
+    borderWidth: 1, borderColor: theme.border,
+  },
+  datePickerText: { fontSize: 14, color: theme.textMuted, fontWeight: '600' },
   postBtn: {
     backgroundColor: '#3ecfbe', borderRadius: 14,
     paddingVertical: 14, alignItems: 'center', marginTop: 20,

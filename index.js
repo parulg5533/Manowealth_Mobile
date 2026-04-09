@@ -146,11 +146,13 @@ app.use(cors(
 ))
 
 const eventRouter = require('./backend/routes/eventRoutes');
+const announcementRouter = require('./backend/routes/announcementRoutes');
 
 //api routes
 app.use('/v1', router);
 app.use('/v1/reviews', reviewRouter);
 app.use('/v1/events', eventRouter);
+app.use('/v1/announcements', announcementRouter);
 
 //serve static files
 app.use(express.static(path.join(__dirname, 'frontendRoles/build')));

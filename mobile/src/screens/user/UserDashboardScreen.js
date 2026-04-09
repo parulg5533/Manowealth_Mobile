@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  Image, RefreshControl, ActivityIndicator, Linking,
+  Image, RefreshControl, ActivityIndicator, Linking, Animated,
 } from 'react-native';
 
 import { useTheme } from '../../context/ThemeContext';
@@ -14,6 +14,19 @@ const TEAM = [
   { name: 'Aditya', role: 'Counselor', email: 'counselor2@iitp.ac.in', initials: 'AD', color: '#3ecfbe', emoji: '💙' },
   { name: 'Mahendar Ram', role: 'PIC Wellness', email: 'pic_wellness@iitp.ac.in', initials: 'MR', color: '#f0a96a', emoji: '🌿' },
 ];
+
+const GYMKHANA = [
+  { role: "Vice President, Students' Gymkhana", name: 'Vanapalli Yuvan', rollNo: '2301EE43', color: '#7c83e0', initials: 'VY' },
+  { role: 'Under Graduate Representative', name: 'Parul Garg', rollNo: '2301CS35', color: '#3ecfbe', initials: 'PG' },
+  { role: 'Post Graduate Representative', name: 'Biplab Dawn', rollNo: '2321MA10', color: '#f0a96a', initials: 'BD' },
+  { role: 'General Secretary, Cultural', name: 'Viraj Gururaj Kulkarni', rollNo: '2301MM25', color: '#f472b6', initials: 'VK' },
+  { role: 'General Secretary, Sports', name: 'Rishabh Singraur', rollNo: '2302ST04', color: '#6ecb8a', initials: 'RS' },
+  { role: 'General Secretary, Technical', name: 'Abhitesh Shukla', rollNo: '2301EE52', color: '#a78bfa', initials: 'AS' },
+  { role: 'General Secretary, Welfare', name: 'Dhivyesh R', rollNo: '', color: '#38bdf8', initials: 'DR' },
+  { role: 'General Secretary, Alumni Relations', name: 'Chirag Garg', rollNo: '2301CS13', color: '#fbbf24', initials: 'CG' },
+];
+
+const EVENT_COLORS = ['#7c83e0', '#3ecfbe', '#f0a96a', '#f472b6', '#6ecb8a', '#a78bfa'];
 
 const DEVELOPERS = [
   {
@@ -62,6 +75,9 @@ export default function UserDashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true);
   const [events, setEvents] = useState([]);
   const [unreadEventCount, setUnreadEventCount] = useState(0);
+  const [announcementCount, setAnnouncementCount] = useState(0);
+  const [eventIdx, setEventIdx] = useState(0);
+  const [gymkhanaOpen, setGymkhanaOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -72,7 +88,11 @@ export default function UserDashboardScreen({ navigation }) {
       ]);
       setProfile(profileRes.data);
       setMoodLogs(moodRes.data?.logs?.slice(0, 7) || []);
-      setEvents(eventsRes.data?.data || []);
+      const sorted = (eventsRes.data?.data || []).sort(
+        (a, b) => new Date(a.eventDate) - new Date(b.eventDate)
+      );
+      setEvents(sorted);
+      setEventIdx(0);
     } catch (err) {
       console.log('Dashboard fetch error:', err);
     } finally {
@@ -84,8 +104,12 @@ export default function UserDashboardScreen({ navigation }) {
   const fetchNotifications = async () => {
     if (!user?.userID) return;
     try {
-      const res = await api.get(`/events/notifications/${user.userID}`);
-      setUnreadEventCount(res.data?.count || 0);
+      const [evNotifRes, annRes] = await Promise.all([
+        api.get(`/events/notifications/${user.userID}`),
+        api.get(`/announcements/user/${user.userID}`),
+      ]);
+      setUnreadEventCount(evNotifRes.data?.count || 0);
+      setAnnouncementCount(annRes.data?.unreadCount || 0);
     } catch {}
   };
 
@@ -106,8 +130,57 @@ export default function UserDashboardScreen({ navigation }) {
 
   const onRefresh = () => { setRefreshing(true); fetchData(); };
 
-  const nextQuote = () => setQuoteIdx(i => (i + 1) % QUOTES.length);
-  const prevQuote = () => setQuoteIdx(i => (i - 1 + QUOTES.length) % QUOTES.length);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const quoteIdxRef = useRef(0);
+
+  const animateTo = useRef((newIdx) => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: -24, duration: 220, useNativeDriver: true }),
+    ]).start(() => {
+      setQuoteIdx(newIdx);
+      quoteIdxRef.current = newIdx;
+      slideAnim.setValue(24);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(slideAnim, { toValue: 0, duration: 220, useNativeDriver: true }),
+      ]).start();
+    });
+  }).current;
+
+  const nextQuote = () => animateTo((quoteIdxRef.current + 1) % QUOTES.length);
+  const prevQuote = () => animateTo((quoteIdxRef.current - 1 + QUOTES.length) % QUOTES.length);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      animateTo((quoteIdxRef.current + 1) % QUOTES.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Event carousel animation
+  const evFadeAnim = useRef(new Animated.Value(1)).current;
+  const evSlideAnim = useRef(new Animated.Value(0)).current;
+  const evIdxRef = useRef(0);
+
+  const animateEventTo = useRef((newIdx) => {
+    Animated.parallel([
+      Animated.timing(evFadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      Animated.timing(evSlideAnim, { toValue: -20, duration: 200, useNativeDriver: true }),
+    ]).start(() => {
+      setEventIdx(newIdx);
+      evIdxRef.current = newIdx;
+      evSlideAnim.setValue(20);
+      Animated.parallel([
+        Animated.timing(evFadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(evSlideAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
+      ]).start();
+    });
+  }).current;
+
+  const nextEvent = (len) => animateEventTo((evIdxRef.current + 1) % len);
+  const prevEvent = (len) => animateEventTo((evIdxRef.current - 1 + len) % len);
 
   const sendSOS = async () => {
     if (!user?.assigned_admin) {
@@ -155,8 +228,18 @@ export default function UserDashboardScreen({ navigation }) {
       {/* Profile Card — bg4 wellness illustration on right */}
       <View style={s.profileCard}>
         <View style={s.profileContent}>
-          <Text style={s.greetingLabel}>{getGreeting()}</Text>
-          <Text style={s.greetingName}>{user?.username || 'Student'} 👋</Text>
+          <View style={s.profileTopRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={s.greetingLabel}>{getGreeting()}</Text>
+              <Text style={s.greetingName}>{user?.username || 'Student'} 👋</Text>
+            </View>
+            <TouchableOpacity style={s.bellBtn} onPress={() => navigation.navigate('Notifications')} activeOpacity={0.8}>
+              <Text style={s.bellIcon}>🔔</Text>
+              {(announcementCount > 0) && (
+                <View style={s.bellBadge}><Text style={s.bellBadgeText}>{announcementCount > 9 ? '9+' : announcementCount}</Text></View>
+              )}
+            </TouchableOpacity>
+          </View>
           <Text style={s.greetingSub}>How are you feeling today?</Text>
           {profile?.score != null && (
             <View style={[s.scorePill, { backgroundColor: theme.sage + '20', borderColor: theme.sage + '50' }]}>
@@ -168,7 +251,7 @@ export default function UserDashboardScreen({ navigation }) {
         <Image
           source={require('../../../assets/bg4.png')}
           style={s.profileIllustration}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </View>
 
@@ -185,32 +268,112 @@ export default function UserDashboardScreen({ navigation }) {
         ))}
       </View>
 
+      {/* Upcoming Events */}
+      <TouchableOpacity
+        style={s.eventsSectionHeader}
+        onPress={markNotifsRead}
+        activeOpacity={1}
+      >
+        <Text style={s.sectionTitle}>📅  Upcoming Events</Text>
+        {unreadEventCount > 0 && (
+          <View style={s.unreadBadge}>
+            <Text style={s.unreadBadgeText}>{unreadEventCount} new</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+      {events.length === 0 ? (
+        <View style={s.noEventsCard}>
+          <Text style={s.noEventsEmoji}>📭</Text>
+          <Text style={s.noEventsText}>No upcoming events right now</Text>
+        </View>
+      ) : (() => {
+        const ev = events[eventIdx];
+        const color = EVENT_COLORS[eventIdx % EVENT_COLORS.length];
+        const isNew = (Date.now() - new Date(ev.createdAt)) / 3600000 < 48;
+        return (
+          <View style={[s.eventCarousel, { borderTopColor: color }]}>
+            <Animated.View style={{ opacity: evFadeAnim, transform: [{ translateX: evSlideAnim }] }}>
+              <View style={s.eventCarouselTop}>
+                <View style={[s.eventIconWrap, { backgroundColor: color + '20' }]}>
+                  <Text style={s.eventIconEmoji}>📅</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={s.eventTitleRow}>
+                    <Text style={s.eventTitle} numberOfLines={2}>{ev.title}</Text>
+                    {isNew && <View style={[s.eventNewPill, { backgroundColor: color + '22', borderColor: color }]}><Text style={[s.eventNewText, { color }]}>NEW</Text></View>}
+                  </View>
+                  <Text style={s.eventDesc} numberOfLines={3}>{ev.description}</Text>
+                </View>
+              </View>
+              <View style={[s.eventMetaDivider, { backgroundColor: color + '30' }]} />
+              <View style={s.eventMeta}>
+                <View style={s.eventMetaItem}>
+                  <Text style={s.eventMetaIcon}>🗓</Text>
+                  <Text style={[s.eventMetaText, { color }]}>
+                    {new Date(ev.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </Text>
+                </View>
+                <View style={s.eventMetaItem}>
+                  <Text style={s.eventMetaIcon}>⏰</Text>
+                  <Text style={[s.eventMetaText, { color }]}>
+                    {new Date(ev.eventDate).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </View>
+                <View style={s.eventMetaItem}>
+                  <Text style={s.eventMetaIcon}>📍</Text>
+                  <Text style={[s.eventMetaText, { color }]} numberOfLines={1}>
+                    {(ev.venue && ev.venue !== 'TBD') ? ev.venue : (ev.location && ev.location !== 'TBD') ? ev.location : 'TBD'}
+                  </Text>
+                </View>
+              </View>
+            </Animated.View>
+            {events.length > 1 && (
+              <View style={s.eventNavRow}>
+                <TouchableOpacity style={[s.eventNavBtn, { borderColor: color + '55' }]} onPress={() => prevEvent(events.length)}>
+                  <Text style={[s.eventNavText, { color }]}>‹</Text>
+                </TouchableOpacity>
+                <View style={s.eventDotRow}>
+                  {events.map((_, i) => (
+                    <TouchableOpacity key={i} onPress={() => animateEventTo(i)}>
+                      <View style={[s.eventDot, { backgroundColor: i === eventIdx ? color : theme.border, width: i === eventIdx ? 14 : 5 }]} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <TouchableOpacity style={[s.eventNavBtn, { borderColor: color + '55' }]} onPress={() => nextEvent(events.length)}>
+                  <Text style={[s.eventNavText, { color }]}>›</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            <Text style={[s.eventCounter, { color: color + '99' }]}>{eventIdx + 1} / {events.length}</Text>
+          </View>
+        );
+      })()}
+
       {/* Quote Card — img illustration on right */}
       <View style={[s.quoteCard, { borderTopColor: quote.color }]}>
         {/* Left: text */}
         <View style={s.quoteContent}>
-          <View style={s.quoteTopRow}>
-            <View style={[s.categoryPill, { backgroundColor: quote.color + '22', borderColor: quote.color + '55' }]}>
-              <Text style={[s.categoryText, { color: quote.color }]}>✦  {quote.category}</Text>
+          <Animated.View style={{ opacity: fadeAnim, transform: [{ translateX: slideAnim }] }}>
+            <View style={s.quoteTopRow}>
+              <View style={[s.categoryPill, { backgroundColor: quote.color + '22', borderColor: quote.color + '55' }]}>
+                <Text style={[s.categoryText, { color: quote.color }]}>✦  {quote.category}</Text>
+              </View>
+              <Text style={s.quoteCounter}>{quoteIdx + 1}/{QUOTES.length}</Text>
             </View>
-            <Text style={s.quoteCounter}>{quoteIdx + 1}/{QUOTES.length}</Text>
-          </View>
-
-          <Text style={[s.quoteBgMark, { color: quote.color }]}>"</Text>
-          <Text style={s.quoteBody}>{quote.text}</Text>
-
-          <View style={s.quoteAuthorRow}>
-            <View style={[s.quoteAccentBar, { backgroundColor: quote.color }]} />
-            <Text style={[s.quoteAuthor, { color: quote.color }]}>{quote.author}</Text>
-          </View>
-
+            <Text style={[s.quoteBgMark, { color: quote.color }]}>"</Text>
+            <Text style={s.quoteBody}>{quote.text}</Text>
+            <View style={s.quoteAuthorRow}>
+              <View style={[s.quoteAccentBar, { backgroundColor: quote.color }]} />
+              <Text style={[s.quoteAuthor, { color: quote.color }]}>{quote.author}</Text>
+            </View>
+          </Animated.View>
           <View style={s.quoteNavRow}>
             <TouchableOpacity style={[s.quoteNavBtn, { borderColor: quote.color + '55' }]} onPress={prevQuote}>
               <Text style={[s.quoteNavText, { color: quote.color }]}>‹</Text>
             </TouchableOpacity>
             <View style={s.quoteDotRow}>
               {QUOTES.map((_, i) => (
-                <TouchableOpacity key={i} onPress={() => setQuoteIdx(i)}>
+                <TouchableOpacity key={i} onPress={() => animateTo(i)}>
                   <View style={[s.quoteDot, { backgroundColor: i === quoteIdx ? quote.color : theme.border, width: i === quoteIdx ? 14 : 5 }]} />
                 </TouchableOpacity>
               ))}
@@ -225,7 +388,7 @@ export default function UserDashboardScreen({ navigation }) {
         <Image
           source={require('../../../assets/img.png')}
           style={s.quoteIllustration}
-          resizeMode="cover"
+          resizeMode="contain"
         />
       </View>
 
@@ -282,62 +445,6 @@ export default function UserDashboardScreen({ navigation }) {
         </View>
       )}
 
-      {/* Upcoming Events */}
-      <TouchableOpacity
-        style={s.eventsSectionHeader}
-        onPress={markNotifsRead}
-        activeOpacity={1}
-      >
-        <Text style={s.sectionTitle}>📅  Upcoming Events</Text>
-        {unreadEventCount > 0 && (
-          <View style={s.unreadBadge}>
-            <Text style={s.unreadBadgeText}>{unreadEventCount} new</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-      {events.length === 0 ? (
-        <View style={s.noEventsCard}>
-          <Text style={s.noEventsEmoji}>📭</Text>
-          <Text style={s.noEventsText}>No upcoming events right now</Text>
-        </View>
-      ) : (
-        <View style={{ marginBottom: 16 }}>
-          {events.map((ev, idx) => {
-            const isNew = (Date.now() - new Date(ev.createdAt)) / 3600000 < 48;
-            const COLORS = ['#7c83e0', '#3ecfbe', '#f0a96a', '#f472b6', '#6ecb8a', '#a78bfa'];
-            const color = COLORS[idx % COLORS.length];
-            return (
-              <View key={ev._id} style={[s.eventCard, { borderLeftColor: color }]}>
-                <View style={s.eventCardTop}>
-                  <View style={[s.eventIconWrap, { backgroundColor: color + '20' }]}>
-                    <Text style={s.eventIconEmoji}>📅</Text>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View style={s.eventTitleRow}>
-                      <Text style={s.eventTitle} numberOfLines={1}>{ev.title}</Text>
-                      {isNew && <View style={[s.eventNewPill, { backgroundColor: color + '22', borderColor: color }]}><Text style={[s.eventNewText, { color }]}>NEW</Text></View>}
-                    </View>
-                    <Text style={s.eventDesc} numberOfLines={2}>{ev.description}</Text>
-                  </View>
-                </View>
-                <View style={s.eventMeta}>
-                  <View style={s.eventMetaItem}>
-                    <Text style={s.eventMetaIcon}>🗓</Text>
-                    <Text style={[s.eventMetaText, { color }]}>
-                      {new Date(ev.eventDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </Text>
-                  </View>
-                  <View style={s.eventMetaItem}>
-                    <Text style={s.eventMetaIcon}>📍</Text>
-                    <Text style={[s.eventMetaText, { color }]}>{ev.venue || ev.location || 'TBD'}</Text>
-                  </View>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
-
       {/* Meet the Team */}
       <View style={s.teamSection}>
         <View style={s.devHeaderRow}>
@@ -373,6 +480,50 @@ export default function UserDashboardScreen({ navigation }) {
           </View>
         ))}
       </View>
+
+      {/* Student Gymkhana Core Team */}
+      <TouchableOpacity
+        style={s.gymkhanaBtn}
+        onPress={() => setGymkhanaOpen(o => !o)}
+        activeOpacity={0.82}
+      >
+        <View style={s.gymkhanaBtnLeft}>
+          <View style={s.gymkhanaBtnIcon}>
+            <Text style={{ fontSize: 20 }}>🏛️</Text>
+          </View>
+          <View>
+            <Text style={s.gymkhanaBtnTitle}>Student Gymkhana</Text>
+            <Text style={s.gymkhanaBtnSub}>Core Team — IIT Patna</Text>
+          </View>
+        </View>
+        <View style={[s.gymkhanaBtnBadge, gymkhanaOpen && { backgroundColor: '#f472b6' }]}>
+          <Text style={[s.gymkhanaBtnBadgeText, gymkhanaOpen && { color: '#fff' }]}>
+            {gymkhanaOpen ? '▲' : '▼'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+
+      {gymkhanaOpen && (
+        <View style={s.gymkhanaSection}>
+          {GYMKHANA.map((member, idx) => (
+            <View key={member.name + idx}>
+              <View style={s.gymRow}>
+                <View style={[s.gymAvatar, { backgroundColor: member.color + '20', borderColor: member.color + '50' }]}>
+                  <Text style={[s.gymInitials, { color: member.color }]}>{member.initials}</Text>
+                </View>
+                <View style={s.gymInfo}>
+                  <Text style={s.gymName}>{member.name}</Text>
+                  <View style={[s.gymRolePill, { backgroundColor: member.color + '18', borderColor: member.color + '40' }]}>
+                    <Text style={[s.gymRoleText, { color: member.color }]}>{member.role}</Text>
+                  </View>
+                  {member.rollNo ? <Text style={s.gymRoll}>{member.rollNo}</Text> : null}
+                </View>
+              </View>
+              {idx < GYMKHANA.length - 1 && <View style={s.teamDivider} />}
+            </View>
+          ))}
+        </View>
+      )}
 
       {/* Meet the Developers */}
       <View style={s.devSection}>
@@ -419,9 +570,22 @@ const styles = (theme) => StyleSheet.create({
     overflow: 'hidden', marginBottom: 20, minHeight: 150,
   },
   profileContent: { flex: 1, padding: 18, justifyContent: 'center' },
+  profileTopRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
   greetingLabel: { fontSize: 12, color: theme.textMuted, fontWeight: '500', marginBottom: 2 },
   greetingName: { fontSize: 20, fontWeight: '800', color: theme.textPrimary, marginBottom: 4 },
   greetingSub: { fontSize: 13, color: theme.textSecondary, fontStyle: 'italic', marginBottom: 10 },
+  bellBtn: {
+    width: 36, height: 36, borderRadius: 12, backgroundColor: theme.elevated,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.border,
+    marginTop: 2,
+  },
+  bellIcon: { fontSize: 16 },
+  bellBadge: {
+    position: 'absolute', top: -4, right: -4,
+    backgroundColor: '#fb7185', borderRadius: 999,
+    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 2,
+  },
+  bellBadgeText: { color: '#fff', fontSize: 9, fontWeight: '800' },
   scorePill: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1,
@@ -429,7 +593,7 @@ const styles = (theme) => StyleSheet.create({
   },
   scoreDot: { fontSize: 8, color: '#6ecb8a' },
   scoreText: { fontSize: 12, fontWeight: '700' },
-  profileIllustration: { width: 120, alignSelf: 'stretch' },
+  profileIllustration: { width: 100, height: 120, alignSelf: 'center' },
 
   // Actions
   sectionTitle: { fontSize: 16, fontWeight: '800', color: theme.textPrimary, marginBottom: 12 },
@@ -465,7 +629,7 @@ const styles = (theme) => StyleSheet.create({
   quoteNavText: { fontSize: 20, fontWeight: '700', lineHeight: 22 },
   quoteDotRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   quoteDot: { height: 5, borderRadius: 3 },
-  quoteIllustration: { width: 88, alignSelf: 'stretch' },
+  quoteIllustration: { width: 82, height: 130, alignSelf: 'center' },
 
   // Mood card
   moodCard: {
@@ -494,7 +658,7 @@ const styles = (theme) => StyleSheet.create({
   sosSubText: { fontSize: 12, color: theme.textMuted, marginTop: 2 },
   sosArrow: { fontSize: 24, color: '#fb7185', fontWeight: '700' },
 
-  // Events
+  // Events carousel
   eventsSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   unreadBadge: { backgroundColor: '#fb7185', borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 },
   unreadBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },
@@ -504,22 +668,29 @@ const styles = (theme) => StyleSheet.create({
   },
   noEventsEmoji: { fontSize: 28, marginBottom: 6 },
   noEventsText: { fontSize: 13, color: theme.textMuted, fontWeight: '600' },
-  eventCard: {
-    backgroundColor: theme.card, borderRadius: 14, padding: 12, marginBottom: 10,
-    borderWidth: 1, borderColor: theme.border, borderLeftWidth: 4,
+  eventCarousel: {
+    backgroundColor: theme.card, borderRadius: 20, padding: 16, marginBottom: 16,
+    borderWidth: 1, borderColor: theme.border, borderTopWidth: 3,
   },
-  eventCardTop: { flexDirection: 'row', gap: 10, marginBottom: 8 },
-  eventIconWrap: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  eventIconEmoji: { fontSize: 18 },
-  eventTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 7, marginBottom: 3 },
-  eventTitle: { fontSize: 13, fontWeight: '800', color: theme.textPrimary, flex: 1 },
+  eventCarouselTop: { flexDirection: 'row', gap: 12, marginBottom: 10 },
+  eventIconWrap: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  eventIconEmoji: { fontSize: 20 },
+  eventTitleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 7, marginBottom: 4 },
+  eventTitle: { fontSize: 14, fontWeight: '800', color: theme.textPrimary, flex: 1 },
   eventNewPill: { borderRadius: 999, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 },
   eventNewText: { fontSize: 9, fontWeight: '800' },
-  eventDesc: { fontSize: 12, color: theme.textSecondary, lineHeight: 16 },
-  eventMeta: { flexDirection: 'row', gap: 14, flexWrap: 'wrap' },
+  eventDesc: { fontSize: 12, color: theme.textSecondary, lineHeight: 17 },
+  eventMetaDivider: { height: 1, marginBottom: 10 },
+  eventMeta: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', marginBottom: 12 },
   eventMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   eventMetaIcon: { fontSize: 11 },
   eventMetaText: { fontSize: 11, fontWeight: '700' },
+  eventNavRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
+  eventNavBtn: { width: 30, height: 30, borderRadius: 8, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  eventNavText: { fontSize: 20, fontWeight: '700', lineHeight: 22 },
+  eventDotRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  eventDot: { height: 5, borderRadius: 3 },
+  eventCounter: { fontSize: 10, fontWeight: '600', textAlign: 'right' },
 
   // Meet the Team section
   teamSection: {
@@ -573,6 +744,44 @@ const styles = (theme) => StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 4,
   },
   devLinkedInText: { fontSize: 10, fontWeight: '700' },
+
+  // Gymkhana
+  gymkhanaBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: theme.card, borderRadius: 18, padding: 14,
+    borderWidth: 1, borderColor: '#f472b640', marginBottom: 8,
+    borderLeftWidth: 4, borderLeftColor: '#f472b6',
+  },
+  gymkhanaBtnLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  gymkhanaBtnIcon: {
+    width: 44, height: 44, borderRadius: 13,
+    backgroundColor: '#f472b620', alignItems: 'center', justifyContent: 'center',
+  },
+  gymkhanaBtnTitle: { fontSize: 14, fontWeight: '800', color: theme.textPrimary },
+  gymkhanaBtnSub: { fontSize: 11, color: theme.textMuted, marginTop: 2 },
+  gymkhanaBtnBadge: {
+    width: 28, height: 28, borderRadius: 8, backgroundColor: '#f472b620',
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: '#f472b650',
+  },
+  gymkhanaBtnBadgeText: { fontSize: 11, fontWeight: '800', color: '#f472b6' },
+  gymkhanaSection: {
+    backgroundColor: theme.card, borderRadius: 18, paddingHorizontal: 16, paddingVertical: 6,
+    borderWidth: 1, borderColor: theme.border, marginBottom: 12,
+  },
+  gymRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
+  gymAvatar: {
+    width: 44, height: 44, borderRadius: 22, borderWidth: 2,
+    alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+  },
+  gymInitials: { fontSize: 14, fontWeight: '900' },
+  gymInfo: { flex: 1, gap: 3 },
+  gymName: { fontSize: 13, fontWeight: '800', color: theme.textPrimary },
+  gymRolePill: {
+    alignSelf: 'flex-start', borderRadius: 999, borderWidth: 1,
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  gymRoleText: { fontSize: 9, fontWeight: '700' },
+  gymRoll: { fontSize: 10, color: theme.textMuted, fontWeight: '600' },
 
   // Counselor card
   counselorCard: {
