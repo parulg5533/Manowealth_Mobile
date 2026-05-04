@@ -374,6 +374,17 @@ Announcements support read-receipts. Unread count shown as badge on the 🔔 bel
 | Dr. Mahendar Ram | PIC Wellness |
 | Mr. Aditya Sahu | Counselor |
 
+### Student Gymkhana Core Team
+| Name | Role | Roll No. |
+|---|---|---|
+| Vanapalli Yuvan | Vice President, Students' Gymkhana | 2301EE43 |
+| Parul Garg | Under Graduate Representative | 2301CS35 |
+| Biplab Dawn | Post Graduate Representative | 2321MA10 |
+| Viraj Gururaj Kulkarni | General Secretary, Cultural | 2301MM25 |
+| Rishabh Singraur | General Secretary, Sports | 2302ST04 |
+| Abhitesh Shukla | General Secretary, Technical | 2301EE52 |
+| Dhivyesh R | General Secretary, Welfare | — |
+| Chirag Garg | General Secretary, Alumni Relations | 2301CS13 |
 
 ### Developers
 | Name | Institution |

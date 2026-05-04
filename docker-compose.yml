@@ -1,0 +1,26 @@
+version: '3.9'
+
+services:
+  backend:
+    image: manowealth-backend:latest   # used when loading a pre-built image
+    build: .                            # used when building from source
+    container_name: manowealth-backend
+    ports:
+      - "3030:3030"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - uploads_data:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3030/', r => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  uploads_data:
+    driver: local

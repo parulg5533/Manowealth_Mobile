@@ -1,0 +1,25 @@
+node_modules
+npm-debug.log
+.env
+.env.*
+!.env.example
+
+# Mobile app (not deployed via Docker)
+mobile/
+
+# Git
+.git
+.gitignore
+
+# Dev/editor files
+*.md
+.vscode
+.idea
+*.log
+
+# Uploads (mounted as volume)
+uploads/
+
+# OS files
+.DS_Store
+Thumbs.db
